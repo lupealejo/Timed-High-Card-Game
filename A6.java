@@ -78,7 +78,7 @@ public void run()
       duration = duration.minusMinutes(minutes);
       long millis = duration.toMillis();
       long seconds = millis / 1000;
-      label.setText(String.format("%04d:%02d:%02d.%03d", hours, minutes, seconds, millis));
+      label.setText(String.format("%04d:%02d:%02d" , hours, minutes, seconds));
                 
       // we call the doNothing method which asks the timer to do nothing for 1000 milliseconds i.e. 1 sec
       this.doNothing(1000);
@@ -106,7 +106,7 @@ public class Pane extends JPanel
 	   
    // Arrange components using GBL:
    setLayout(new GridBagLayout());
-   label = new JLabel(String.format("%04d:%02d:%02d.%03d", 0, 0, 0, 0));
+   label = new JLabel(String.format("%04d:%02d:%02d" , 0, 0, 0));
    timer = null;
 	   
     // Specifiy constraints:
