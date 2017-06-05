@@ -72,7 +72,7 @@ public class A6 {
 				public void actionPerformed(ActionEvent e) {
 					
 						long runningTime = System.currentTimeMillis() - lastTickTime;
-					     	 Duration duration = Duration.ofMillis(runningTime);
+					     	Duration duration = Duration.ofMillis(runningTime);
 					      	long hours = duration.toHours();
 					      	duration = duration.minusHours(hours);
 					      	long minutes = duration.toMinutes();
@@ -121,7 +121,7 @@ public class A6 {
 
 			gbc.gridx = 0;
 		      	gbc.gridy++;
-		     	 gbc.weightx = 0;
+		     	gbc.weightx = 0;
 		      	gbc.gridwidth = 1;
 		      	add(start, gbc);
 		      	gbc.gridx++;
