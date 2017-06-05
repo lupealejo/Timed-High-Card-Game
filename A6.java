@@ -106,7 +106,7 @@ public class Pane extends JPanel
 	   
    // Arrange components using GBL:
    setLayout(new GridBagLayout());
-   label = new JLabel(String.format("%04d:%02d:%02d", 0, 0, 0));
+   label = new JLabel(String.format("%04d:%02d:%02d.%03d", 0, 0, 0, 0));
    timer = null;
 	   
     // Specifiy constraints:
@@ -121,7 +121,7 @@ public class Pane extends JPanel
     start.addActionListener(new ActionListener()
     {
     @Override
-    public void actionPerformed(ActionEvent e) 
+    public void actionPerformed(ActionEvent e) //actionPerformed method
     {
        if(timer == null)
     {
