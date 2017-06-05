@@ -22,36 +22,36 @@ public class A6
    public static void main(String[] args) 
    {
       new A6();
-    }
-    public A6() 
-    {
+   }
+   public A6() 
+   {
+   
+   // Execute Runnable on the AWT thread.
+   EventQueue.invokeLater (new Runnable() 
+   {
 
-        // Execute Runnable on the AWT thread.
-        EventQueue.invokeLater (new Runnable() 
-	{
+      // Override run():
+      @Override
+      public void run() 
+      {
+          try 
+      {
+         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+      }
+      catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex)
+      {
+      ex.printStackTrace();
+      }
 
-	    // Override run():
-            @Override
-            public void run() 
-	    {
-               try 
-	       {
-                   UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                }
-                catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex)
-		{
-                   ex.printStackTrace();
-                }
-
-                // Creating JFrame Object:
-                JFrame frame = new JFrame("Timer");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.add(new Pane());
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-	     } // Close run
-      } );
+         // Creating JFrame Object:
+         JFrame frame = new JFrame("Timer");
+         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         frame.add(new Pane());
+         frame.pack();
+         frame.setLocationRelativeTo(null);
+         frame.setVisible(true);
+      } // Close run
+   } );
 } // End A6 Class.
 
 //we implement a new timer class as requested
