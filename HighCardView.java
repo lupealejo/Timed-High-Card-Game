@@ -13,8 +13,14 @@ public class HighCardView
 	static JLabel[] playLabelText = new JLabel[NUM_PLAYERS];
 	static JLabel currentLeftCard, currentRightCard;
 	static JLabel text = new JLabel("Select a Pile", JLabel.CENTER);
-	static int turn = 0;
+	static JButton pass = new JButton("Pass");
+	static int turn = 0, index, compIndex;
 	static boolean inCenter = false;
+	static Card newCard = new Card();
+	static Card selectedCard = new Card();
+	static Card computerSelected = new Card();
+	static boolean found = false;
+	static boolean passBool = false;
 
 	static JButton[] humanCardButtons = new JButton[NUM_CARDS_PER_HAND];
 	static JButton[] sideButtons = new JButton[NUM_CARDS_PER_HAND];
@@ -43,6 +49,10 @@ public class HighCardView
 	public static Hand humanHand;
 	public static Hand computerHand;
 
+	static Card leftCard = highCardGame.getCardFromDeck();
+	static Card rightCard = highCardGame.getCardFromDeck();
+
+
 	public HighCardView()
 	{
 		if (!highCardGame.deal())
@@ -66,17 +76,17 @@ public class HighCardView
 		myCardTable.setLocationRelativeTo(null);
 		myCardTable.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		myCardTable.pnlComputerHand.setBorder(
+		myCardTable.compHandPanel.setBorder(
 				BorderFactory.createTitledBorder("Computer Hand"));
-		myCardTable.pnlHumanHand.setBorder(
+		myCardTable.humanHandPanel.setBorder(
 				BorderFactory.createTitledBorder("Your Hand"));
 		myCardTable.leftPlay.setBorder(
 				BorderFactory.createTitledBorder("Left Pile"));
 		myCardTable.rightPlay.setBorder(
 				BorderFactory.createTitledBorder("Right Pile"));
-		myCardTable.pnlTimer.setBorder(
+		myCardTable.timerPanel.setBorder(
 				BorderFactory.createTitledBorder("Timer"));
-		myCardTable.pnlPlayArea.setLayout(new GridLayout(1, 3));
+		myCardTable.playAreaPanel.setLayout(new GridLayout(1, 3));
 
 		// CREATE LABELS ----------------------------------------------------
 
@@ -93,14 +103,15 @@ public class HighCardView
 
 		// ADD LABELS TO PANELS -----------------------------------------
 		for (k = 0; k < NUM_CARDS_PER_HAND; k++)
-			myCardTable.pnlComputerHand.add(computerLabels[k]);
+			myCardTable.compHandPanel.add(computerLabels[k]);
 
 		setupPlayerHand(humanHand, computerHand);
 		setupPlayArea();
 
 		// ADD TIMER -----------------------------------------------------
-		myCardTable.pnlTimer.add(insertClock.timeText);
-		myCardTable.pnlTimer.add(insertClock.startStopButton);
+		myCardTable.timerPanel.add(insertClock.timeText);
+		myCardTable.timerPanel.add(insertClock.startStopButton);
+		myCardTable.timerPanel.add(pass);
 
 		// Increase timer display font size
 		insertClock.timeText.setFont(new Font("Aerial", Font.BOLD, 20));
@@ -153,20 +164,22 @@ public class HighCardView
 	{
 		for (int k = 0; k < NUM_PLAYERS; k++)
 		{
-			playedCardLabels[k] = new JLabel(
-					cardGUI.getBackCardIcon());
 			if (0 == k)
 			{
 				sideButtons[k] = new JButton("Select");
+				playedCardLabels[k] = new JLabel(
+						cardGUI.getIcon(leftCard));
 			} else
 			{
 				sideButtons[k] = new JButton("Select");
+				playedCardLabels[k] = new JLabel(
+						cardGUI.getIcon(rightCard));
 			}
 		}
 
 		currentLeftCard = playedCardLabels[0];
 		currentRightCard = playedCardLabels[1];
-		
+
 		myCardTable.leftPlay.add(sideButtons[0], BorderLayout.WEST);
 		myCardTable.rightPlay.add(sideButtons[1], BorderLayout.EAST);
 		myCardTable.leftPlay.add(currentLeftCard, BorderLayout.SOUTH);
@@ -182,7 +195,7 @@ public class HighCardView
 
 		for (int k = 0; k < NUM_CARDS_PER_HAND; k++)
 		{
-			myCardTable.pnlHumanHand.add(humanCardButtons[k]);
+			myCardTable.humanHandPanel.add(humanCardButtons[k]);
 		}
 	}
 
@@ -194,7 +207,7 @@ public class HighCardView
 			humanCardButtons[k].addActionListener(listenForPlayCard);
 		}
 	}
-	
+
 	void addSideButtonListener()
 	{
 		for(int i = 0; i < NUM_PLAYERS; i++)
@@ -203,33 +216,76 @@ public class HighCardView
 			sideButtons[i].addActionListener(selectSides);
 		}
 	}
-	
+
+	void addPassButton()
+	{
+		currentButton = pass;
+		pass.addActionListener(addPass);
+	}
+
+	private ActionListener addPass = new ActionListener()
+	{
+		public void actionPerformed(ActionEvent e)
+		{
+			setCurrentButton((JButton) e.getSource());
+			passBool = true;
+			computerPlays();
+		}
+	};
+
+	private ActionListener cardPlayListener = new ActionListener()
+	{
+		public void actionPerformed(ActionEvent e)
+		{
+			setCurrentButton((JButton) e.getSource());
+			myCardTable.humanHandPanel.remove(getCurrentButton());
+
+			loop:
+				for (int x = 0; x < NUM_CARDS_PER_HAND; x++)
+				{
+					if (getCurrentButton() == humanCardButtons[x] && leftCard.build(selectedCard) ||
+							getCurrentButton() == humanCardButtons[x] && rightCard.build(selectedCard))
+					{
+						index = x;
+						myCardTable.humanHandPanel.remove(getCurrentButton());
+						playCards(humanHand.inspectCard(x), computerHand);
+						break loop;
+					}
+				}
+			refreshPlayerPanel();
+		}   
+	};
+
 	private ActionListener selectSides = new ActionListener()
 	{
 		public void actionPerformed(ActionEvent e)
 		{
 			setCurrentButton((JButton) e.getSource());
-			
+
 			loop:
 				for (int x = 0; x < NUM_PLAYERS; x++)
 				{
-					if (getCurrentButton() == sideButtons[0] && inCenter == true)
+					if ((getCurrentButton() == sideButtons[0] && inCenter == true && leftCard.build(selectedCard)))
 					{
+						leftCard = selectedCard;
 						myCardTable.centerPlay.remove(playedCardLabels[1]);
 						myCardTable.leftPlay.remove(currentLeftCard);
 						myCardTable.centerPlay.remove(text);
 						currentLeftCard = playedCardLabels[1];
 						myCardTable.leftPlay.add(currentLeftCard);
 						inCenter = false;
+						computerPlays();
 					}
-					else if (inCenter == true)
+					else if (inCenter == true && rightCard.build(selectedCard))
 					{
+						rightCard = selectedCard;
 						myCardTable.centerPlay.remove(playedCardLabels[1]);
 						myCardTable.rightPlay.remove(currentRightCard);
 						myCardTable.centerPlay.remove(text);
 						currentRightCard = playedCardLabels[1];
 						myCardTable.rightPlay.add(currentRightCard);
 						inCenter = false;
+						computerPlays();
 					}
 				}
 			refreshPlayerPanel();
@@ -252,20 +308,20 @@ public class HighCardView
 
 	public static void refreshPlayerPanel()
 	{
-		myCardTable.pnlHumanHand.setVisible(false);
-		myCardTable.pnlHumanHand.setVisible(true);
+		myCardTable.humanHandPanel.setVisible(false);
+		myCardTable.humanHandPanel.setVisible(true);
 	}
 
 	public static void refreshComputerPanel()
 	{
-		myCardTable.pnlComputerHand.setVisible(false);
-		myCardTable.pnlComputerHand.setVisible(true);
+		myCardTable.compHandPanel.setVisible(false);
+		myCardTable.compHandPanel.setVisible(true);
 	}
 
 	public static void refreshPlayArea()
 	{
-		myCardTable.pnlPlayArea.setVisible(false);
-		myCardTable.pnlPlayArea.setVisible(true);
+		myCardTable.playAreaPanel.setVisible(false);
+		myCardTable.playAreaPanel.setVisible(true);
 	}
 
 	public static void clearPlayArea()
@@ -279,19 +335,126 @@ public class HighCardView
 	public static void addCardsToPlayArea()
 	{
 		myCardTable.centerPlay.add(playedCardLabels[1]);
+		
+		if (highCardGame.getNumCardsRemainingInDeck() != 0)
+		{
+			newCard = highCardGame.getCardFromDeck();
+			humanHand.setCard(index, newCard);
+
+			myCardTable.humanHandPanel.removeAll();
+			myCardTable.humanHandPanel.revalidate();
+			myCardTable.humanHandPanel.repaint();
+
+			if ()
+			
+			setupPlayerHand(humanHand, computerHand);
+			//humanCardButtons[index] = new JButton("", cardGUI.getIcon(humanHand.inspectCard(index)));
+			humanLabels[index] = new JLabel(GUICard.getIcon(humanHand.inspectCard(index)));
+			myCardTable.humanHandPanel.add(humanCardButtons[index]);
+		}
 		myCardTable.centerPlay.add(text);
 		inCenter = true;
 		refreshPlayArea();
 	}
 
+	public static void computerPlays()
+	{	
+		computerSelected = computerSelect();
+
+		if(found == false && passBool == true && highCardGame.getNumCardsRemainingInDeck() == 0)
+		{
+			int compNullCards = 0, playerNullCards = 0;
+			
+			for (int i = 0; i < NUM_CARDS_PER_HAND; i++)
+			{
+				if (humanHand.inspectCard(i) == null)
+				{
+					playerNullCards += 1;
+				}
+				
+				if (computerHand.inspectCard(i) == null)
+				{
+					compNullCards += 1;
+				}
+			}
+			
+			if (playerNullCards > compNullCards)
+			{
+				WinnerWindow EndGame = new WinnerWindow("You won!");
+			}
+			else if (playerNullCards < compNullCards)
+			{
+				WinnerWindow EndGame = new WinnerWindow("You lost!");
+			}
+			else
+			{
+				WinnerWindow EndGame = new WinnerWindow("Draw!");
+			}
+		}
+		else if (found == false && passBool == true) 
+		{
+			leftCard = highCardGame.getCardFromDeck();
+			myCardTable.leftPlay.remove(currentLeftCard);
+			currentLeftCard = new JLabel(cardGUI.getIcon(leftCard), JLabel.CENTER);
+			myCardTable.leftPlay.add(currentLeftCard);
+			
+			rightCard = highCardGame.getCardFromDeck();
+			myCardTable.rightPlay.remove(currentRightCard);
+			currentRightCard = new JLabel(cardGUI.getIcon(rightCard), JLabel.CENTER);
+			myCardTable.rightPlay.add(currentRightCard);;
+			return;
+		}
+		else if (found == false)
+		{
+			return;
+		}
+
+		newCard = highCardGame.getCardFromDeck();
+		computerHand.setCard(compIndex, newCard);
+
+		playedCardLabels[0] = new JLabel(
+				cardGUI.getIcon(computerSelected), JLabel.CENTER);
+
+		if (leftCard.build(computerSelected))
+		{
+			leftCard = computerSelected;
+			myCardTable.leftPlay.remove(currentLeftCard);
+			currentLeftCard = playedCardLabels[0];
+			myCardTable.leftPlay.add(currentLeftCard);
+		}
+		else if (rightCard.build(computerSelected))
+		{
+			rightCard = computerSelected;
+			myCardTable.rightPlay.remove(currentRightCard);
+			currentRightCard = playedCardLabels[0];
+			myCardTable.rightPlay.add(currentRightCard);;
+		}
+
+		refreshPlayArea();
+	}
+
+	private static Card computerSelect()
+	{
+		Card selected = new Card();
+		found = false;
+
+		for (int i = 0; i < NUM_CARDS_PER_HAND; i++)
+		{
+			if (leftCard.build(computerHand.inspectCard(i)) || rightCard.build(computerHand.inspectCard(i)))
+			{
+				selected = computerHand.inspectCard(i);
+				compIndex = i;
+				found = true;
+			}
+		}
+
+		return selected;
+	}
+
 	public static void playCards(Card playerCard, Hand computerHand)
 	{
 		playerPlayCard(playerCard);
-		playerWins(playerCard,
-				computerPlayCard(playerCard, computerHand));
 		addCardsToPlayArea();
-		clearPlayArea();
-		endGame();
 	}
 
 	public static void endGame(){
@@ -306,10 +469,10 @@ public class HighCardView
 		if (k==x){
 			clearPlayArea();
 			if (getWinnings()>=8){
-				myCardTable.pnlPlayArea.add(new JLabel("You Win!", JLabel.CENTER));
+				myCardTable.playAreaPanel.add(new JLabel("You Win!", JLabel.CENTER));
 			} else {
 
-				myCardTable.pnlPlayArea.add(new JLabel("You Lose!", JLabel.CENTER));
+				myCardTable.playAreaPanel.add(new JLabel("You Lose!", JLabel.CENTER));
 			}
 		}
 	}
@@ -351,7 +514,7 @@ public class HighCardView
 		loop:
 			for (int k=0;k<computerLabels.length;k++){
 				if (computerLabels[k].getParent()!=null){
-					myCardTable.pnlComputerHand.remove(computerLabels[k]);
+					myCardTable.compHandPanel.remove(computerLabels[k]);
 					break loop;
 				}
 			}
@@ -384,6 +547,12 @@ public class HighCardView
 		return false;
 	}
 
+	public static int getValue(char value)
+	{
+		return getIndexValue(value);
+
+	}
+
 	private static int getIndexValue(char value)
 	{
 		int index = -1;
@@ -400,6 +569,26 @@ public class HighCardView
 		myCardTable.setVisible(bool);
 	}
 
+	static class WinnerWindow extends JFrame
+	{
+		public JPanel mainPanel;
+		static JLabel newtext;
+		
+		public WinnerWindow(String text)
+		{
+			setSize(800, 600);
+			setLocationRelativeTo(null);
+			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			setLayout(new BorderLayout());
+			
+			newtext = new JLabel(text, JLabel.CENTER);
+			mainPanel = new JPanel();
+			
+			add(mainPanel);
+			mainPanel.add(newtext);
+		}
+	}
+	
 	static class CardTable extends JFrame
 	{
 		private int MAX_CARDS_PER_HAND = 56;
@@ -408,8 +597,8 @@ public class HighCardView
 		private int numCardsPerHand;
 		private int numPlayers;
 
-		public JPanel pnlComputerHand, pnlHumanHand, pnlPlayArea, leftPlay, rightPlay, centerPlay;
-		public JPanel mainPanel, pnlTimer;
+		public JPanel compHandPanel, humanHandPanel, playAreaPanel, leftPlay, rightPlay, centerPlay;
+		public JPanel mainPanel, timerPanel;
 
 		public CardTable(String title, int numCardsPerHand, int numPlayers)
 		{
@@ -420,22 +609,22 @@ public class HighCardView
 			setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			setLayout(new BorderLayout());
 			mainPanel = new JPanel();
-			pnlComputerHand = new JPanel();
-			pnlHumanHand = new JPanel();
-			pnlPlayArea = new JPanel();
-			pnlTimer = new JPanel();
+			compHandPanel = new JPanel();
+			humanHandPanel = new JPanel();
+			playAreaPanel = new JPanel();
+			timerPanel = new JPanel();
 			leftPlay = new JPanel();
 			rightPlay = new JPanel();
 			centerPlay = new JPanel();
 
-			add(pnlComputerHand, BorderLayout.NORTH);
-			add(pnlPlayArea, BorderLayout.CENTER);
-			add(pnlHumanHand, BorderLayout.SOUTH);
-			add(pnlTimer, BorderLayout.EAST);
+			add(compHandPanel, BorderLayout.NORTH);
+			add(playAreaPanel, BorderLayout.CENTER);
+			add(humanHandPanel, BorderLayout.SOUTH);
+			add(timerPanel, BorderLayout.EAST);
 
-			pnlPlayArea.add(leftPlay, BorderLayout.WEST);
-			pnlPlayArea.add(centerPlay, BorderLayout.CENTER);
-			pnlPlayArea.add(rightPlay, BorderLayout.EAST);
+			playAreaPanel.add(leftPlay, BorderLayout.WEST);
+			playAreaPanel.add(centerPlay, BorderLayout.CENTER);
+			playAreaPanel.add(rightPlay, BorderLayout.EAST);
 		}
 
 		private boolean isValid(String title, int numCardsPerHand, int numPlayers)
@@ -539,7 +728,6 @@ class GUICard
 	}
 }
 
-
 // Set up Timer and button actions to run on separate thread
 class Clock extends JFrame
 {
@@ -595,6 +783,7 @@ class Clock extends JFrame
 		}
 	};
 
+
 	// Create Timer object and call run method
 	private ActionListener buttonEvent = new ActionListener()
 	{
@@ -604,6 +793,7 @@ class Clock extends JFrame
 			timerThread.start();
 		}
 	};
+
 
 	// Called by ActionListener to start, stop, and display time and buttons
 	private class TimerClass extends Thread

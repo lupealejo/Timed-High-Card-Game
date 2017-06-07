@@ -1,9 +1,6 @@
 import java.util.Arrays;
 import java.util.Random;
 
-
-
-
 public class HighCardModel {
 
     static int NUM_CARDS_PER_HAND = 7;
@@ -31,7 +28,6 @@ public class HighCardModel {
              System.exit(1);
           }
     }
-    
     
     public int getNumCardsPerHand(){
         return NUM_CARDS_PER_HAND;
@@ -178,6 +174,16 @@ class Card
    {
       return card.value == value && card.suit == suit;
    }
+   
+   public boolean build(Card card)
+   {
+	   if (getIndexValue(getchar()) == getIndexValue(card.getchar()) + 1 || getIndexValue(getchar()) == getIndexValue(card.getchar()) - 1)
+	   {
+		   return true;
+	   }
+	   
+	   return false;
+   }
 
    // Check if card has valid value and suit
    private boolean isValid(char value, Suit suit)
@@ -220,6 +226,11 @@ class Hand
    {
       myCards = new Card[MAX_CARDS];   //Length
       numCards = 0;
+   }
+   
+   public void setCard(int index, Card newCard)
+   {
+	   myCards[index] = newCard;
    }
 
    // Remove all cards from the hand
@@ -418,9 +429,14 @@ class Deck
    // Returns and removes the card  at the top position
    public Card dealCard()
    {
-      int tCard = topCard;
-      topCard--;
-      return cards[tCard];
+	  if(topCard != 0)
+	  {
+		  int tCard = topCard;
+	      topCard--;
+	      return cards[tCard];
+	  }
+	  
+	  return null;
    }
 
    // Accessor for topCard
